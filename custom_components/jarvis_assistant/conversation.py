@@ -1,4 +1,4 @@
-"""Hermes Assist conversation agent."""
+"""Jarvis Assistant conversation agent."""
 
 from __future__ import annotations
 
@@ -62,8 +62,8 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Register the Hermes Assist conversation entity."""
-    async_add_entities([HermesAssistConversationEntity(entry)])
+    """Register the Jarvis Assistant conversation entity."""
+    async_add_entities([JarvisAssistantConversationEntity(entry)])
 
 
 @dataclass(frozen=True)
@@ -77,13 +77,13 @@ class _Request:
     device_id: str | None
 
 
-class HermesAssistConversationEntity(conversation.ConversationEntity):
+class JarvisAssistantConversationEntity(conversation.ConversationEntity):
     """Sends utterances to Hermes, acknowledging slow requests and
     delivering their results when they finish.
     """
 
     _attr_has_entity_name = True
-    _attr_name = "Hermes Assist"
+    _attr_name = "Jarvis Assistant"
 
     def __init__(self, entry: ConfigEntry) -> None:
         self._entry = entry

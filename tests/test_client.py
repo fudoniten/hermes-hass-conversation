@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.hermes_assist.client import HermesClient, RunsUnsupportedError
+from custom_components.jarvis_assistant.client import HermesClient, RunsUnsupportedError
 
 URL = "http://hermes.local:8642"
 

@@ -1,4 +1,4 @@
-"""Config flow for the Hermes Assist integration."""
+"""Config flow for the Jarvis Assistant integration."""
 
 from __future__ import annotations
 
@@ -88,7 +88,7 @@ def _auth_headers(api_key: str | None) -> dict[str, str]:
     return headers
 
 
-class HermesAssistConfigFlow(ConfigFlow, domain=DOMAIN):
+class JarvisAssistantConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the initial setup."""
 
     VERSION = 1
@@ -116,7 +116,7 @@ class HermesAssistConfigFlow(ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(url)
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=f"Hermes Assist ({url})",
+                    title=f"Jarvis Assistant ({url})",
                     data={CONF_URL: url},
                     options={
                         CONF_MODEL: user_input.get(CONF_MODEL, DEFAULT_MODEL),
@@ -148,10 +148,10 @@ class HermesAssistConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Return the options flow."""
-        return HermesAssistOptionsFlow()
+        return JarvisAssistantOptionsFlow()
 
 
-class HermesAssistOptionsFlow(OptionsFlow):
+class JarvisAssistantOptionsFlow(OptionsFlow):
     """Tweak connection, prompt and async behaviour after setup."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:

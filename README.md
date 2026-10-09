@@ -1,10 +1,14 @@
-# Hermes Assist for Home Assistant
+<p align="center">
+  <img src="custom_components/jarvis_assistant/brand/icon@2x.png" alt="Jarvis Assistant" width="200">
+</p>
+
+# Jarvis Assistant for Home Assistant
 
 A Home Assistant conversation agent for [Hermes Agent](https://github.com/NousResearch/hermes-agent)
 that stays responsive when Hermes is slow.
 
 Hermes can take well over a minute to finish a capable request ("play the latest
-episode of that podcast on the media room speaker"). Hermes Assist starts each
+episode of that podcast on the media room speaker"). Jarvis Assistant starts each
 request as an async run and waits a few seconds:
 
 - **Hermes answers within the window** → you hear the answer, as with any agent.
@@ -26,28 +30,47 @@ Serge Jespers (MIT). See [`docs/PLAN.md`](docs/PLAN.md) for the design.
 ## Installation
 
 **HACS:** HACS → ⋮ → Custom repositories → add this repository's URL with type
-**Integration** → install **Hermes Assist** → restart Home Assistant. (HACS needs
+**Integration** → install **Jarvis Assistant** → restart Home Assistant. (HACS needs
 the repository to be public.)
 
-**Manual:** copy `custom_components/hermes_assist/` into
+**Manual:** copy `custom_components/jarvis_assistant/` into
 `/config/custom_components/` and restart Home Assistant.
 
 Then:
 
-1. Settings → Devices & services → Add integration → **Hermes Assist**. Enter the
+1. Settings → Devices & services → Add integration → **Jarvis Assistant**. Enter the
    Hermes URL (for example `http://jarvis:8642`) and API key.
-2. Settings → Voice assistants → your pipeline → **Conversation agent**: Hermes
-   Assist.
+2. Settings → Voice assistants → your pipeline → **Conversation agent**: Jarvis
+   Assistant.
 3. In the same pipeline, turn on **Prefer handling commands locally**, so simple
    commands ("turn off the kitchen lights") are handled by Home Assistant in under
    a second and only the rest goes to Hermes.
 
-Hermes Assist uses its own domain (`hermes_assist`), so it can be installed
+Jarvis Assistant uses its own domain (`jarvis_assistant`), so it can be installed
 alongside the original `hermes` integration while you compare them.
+
+The Jarvis logo appears on the Devices & services page on Home Assistant 2026.3
+or newer, which load brand images shipped with the integration
+(`custom_components/jarvis_assistant/brand/`). HACS shows its generic icon.
+
+### Upgrading from Hermes Assist (0.1.x)
+
+Version 0.2.0 renamed the integration from Hermes Assist (`hermes_assist`) to
+Jarvis Assistant (`jarvis_assistant`). Home Assistant treats it as a new
+integration, so:
+
+1. Note your Hermes Assist options (prompt, notify target and so on).
+2. Delete the **Hermes Assist** integration in Settings → Devices & services.
+3. Update through HACS, or copy the new `custom_components/jarvis_assistant/`
+   folder. If `custom_components/hermes_assist/` is still there afterwards,
+   delete it. Then restart.
+4. Add **Jarvis Assistant**, re-enter your options, and select it as the
+   conversation agent in your voice assistant again. Its entity is now
+   `conversation.jarvis_assistant`.
 
 ## Options
 
-Settings → Devices & services → Hermes Assist → Configure.
+Settings → Devices & services → Jarvis Assistant → Configure.
 
 | Option | Default | What it does |
 |---|---|---|
@@ -62,7 +85,7 @@ Settings → Devices & services → Hermes Assist → Configure.
 | Model, API key, system prompt | | As in the original integration |
 
 The acknowledgment patterns live in `ACK_PATTERNS` in
-`custom_components/hermes_assist/const.py`.
+`custom_components/jarvis_assistant/const.py`.
 
 ## How late results are delivered
 
@@ -77,7 +100,7 @@ The acknowledgment patterns live in `ACK_PATTERNS` in
 
 ## Limitations
 
-- If Home Assistant restarts, or you change Hermes Assist's options, while a slow
+- If Home Assistant restarts, or you change Jarvis Assistant's options, while a slow
   request is running, that request is stopped and its result is not delivered.
 - A Hermes run waiting for a tool approval will hit the maximum wait unless it's
   approved on the Hermes side.
@@ -85,13 +108,13 @@ The acknowledgment patterns live in `ACK_PATTERNS` in
 
 ## Troubleshooting
 
-Turn on Hermes Assist's logs in `configuration.yaml` and restart:
+Turn on Jarvis Assistant's logs in `configuration.yaml` and restart:
 
 ```yaml
 logger:
   default: warning
   logs:
-    custom_components.hermes_assist: info   # use debug for raw run records and events
+    custom_components.jarvis_assistant: info   # use debug for raw run records and events
 ```
 
 Each request then logs its whole life, for example:

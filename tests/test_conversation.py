@@ -1,4 +1,4 @@
-"""Tests for the Hermes Assist conversation agent."""
+"""Tests for the Jarvis Assistant conversation agent."""
 
 from __future__ import annotations
 
@@ -17,8 +17,8 @@ from pytest_homeassistant_custom_component.common import (
     async_mock_service,
 )
 
-from custom_components.hermes_assist.client import RunsUnsupportedError
-from custom_components.hermes_assist.const import (
+from custom_components.jarvis_assistant.client import RunsUnsupportedError
+from custom_components.jarvis_assistant.const import (
     CONF_FAST_WINDOW,
     CONF_MAX_WAIT,
     CONF_NOTIFY_TARGET,
@@ -29,7 +29,7 @@ from custom_components.hermes_assist.const import (
     TOO_LONG_TEXT,
 )
 
-AGENT_ID = "conversation.hermes_assist"
+AGENT_ID = "conversation.jarvis_assistant"
 SATELLITE = "assist_satellite.kitchenette"
 
 
@@ -85,10 +85,10 @@ def hermes() -> FakeHermes:
     fake = FakeHermes()
     with (
         patch(
-            "custom_components.hermes_assist.conversation.HermesClient",
+            "custom_components.jarvis_assistant.conversation.HermesClient",
             return_value=fake,
         ),
-        patch("custom_components.hermes_assist.runner.POLL_INTERVAL", 0.01),
+        patch("custom_components.jarvis_assistant.runner.POLL_INTERVAL", 0.01),
     ):
         yield fake
 
@@ -106,7 +106,7 @@ def start_conversation(hass: HomeAssistant):
 @pytest.fixture
 def persistent():
     with patch(
-        "custom_components.hermes_assist.delivery.persistent_notification.async_create"
+        "custom_components.jarvis_assistant.delivery.persistent_notification.async_create"
     ) as mock:
         yield mock
 

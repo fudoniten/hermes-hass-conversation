@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
-from custom_components.hermes_assist.runner import async_wait_for_run
+from custom_components.jarvis_assistant.runner import async_wait_for_run
 
 
 class ScriptedHermes:
@@ -38,12 +38,12 @@ class ScriptedHermes:
 
 @pytest.fixture(autouse=True)
 def fast_polling():
-    with patch("custom_components.hermes_assist.runner.POLL_INTERVAL", 0.01):
+    with patch("custom_components.jarvis_assistant.runner.POLL_INTERVAL", 0.01):
         yield
 
 
 async def test_logs_status_changes_and_tools(caplog: pytest.LogCaptureFixture) -> None:
-    caplog.set_level(logging.INFO, logger="custom_components.hermes_assist")
+    caplog.set_level(logging.INFO, logger="custom_components.jarvis_assistant")
     client = ScriptedHermes(
         [
             {"status": "queued"},
@@ -73,7 +73,7 @@ async def test_logs_status_changes_and_tools(caplog: pytest.LogCaptureFixture) -
 async def test_logs_pending_approval_and_timeout_summary(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    caplog.set_level(logging.INFO, logger="custom_components.hermes_assist")
+    caplog.set_level(logging.INFO, logger="custom_components.jarvis_assistant")
     approval = {
         "event": "approval.request",
         "run_id": "run_1",

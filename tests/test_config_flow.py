@@ -12,7 +12,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
 
-from custom_components.hermes_assist.const import (
+from custom_components.jarvis_assistant.const import (
     CONF_API_KEY,
     CONF_FAST_WINDOW,
     CONF_MODEL,

@@ -1,1 +1,1 @@
-"""Tests for Hermes Assist."""
+"""Tests for Jarvis Assistant."""

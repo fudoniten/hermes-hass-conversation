@@ -1,8 +1,8 @@
-"""Constants for the Hermes Assist integration."""
+"""Constants for the Jarvis Assistant integration."""
 
 from __future__ import annotations
 
-DOMAIN = "hermes_assist"
+DOMAIN = "jarvis_assistant"
 
 CONF_URL = "url"
 CONF_TIMEOUT = "timeout"
@@ -21,7 +21,7 @@ DEFAULT_URL = "http://192.168.1.100:8642"
 DEFAULT_TIMEOUT = 60
 DEFAULT_MODEL = "hermes-agent"
 DEFAULT_SYSTEM_PROMPT = (
-    "You are Hermes, a smart home voice assistant. "
+    "You are Jarvis, a smart home voice assistant. "
     "Keep responses short and natural for spoken output. "
     "You can control Home Assistant devices when the user asks about one or requests an action. "
     "When the user's utterance is a routine name (good night, good morning, bedtime) or states "
@@ -56,7 +56,7 @@ ACK_PATTERNS: list[tuple[str, str]] = [
 
 FAILED_TEXT = "Sorry, that didn't work. Check the Home Assistant logs for details."
 TOO_LONG_TEXT = "That's taking longer than expected, so I've stopped working on it."
-NOTIFICATION_TITLE = "Hermes"
+NOTIFICATION_TITLE = "Jarvis"
 
 # Maximum length of text spoken on a satellite; longer results are cut at a
 # sentence boundary. Notifications always carry the full text.
