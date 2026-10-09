@@ -83,6 +83,42 @@ The acknowledgment patterns live in `ACK_PATTERNS` in
   approved on the Hermes side.
 - Conversation history is kept in memory (last 10 exchanges per conversation).
 
+## Troubleshooting
+
+Turn on Hermes Assist's logs in `configuration.yaml` and restart:
+
+```yaml
+logger:
+  default: warning
+  logs:
+    custom_components.hermes_assist: info   # use debug for raw run records and events
+```
+
+Each request then logs its whole life, for example:
+
+```
+Hermes run run_ab12 started in 0.1s for 'turn off the den lights' (0 history messages, device assist_satellite.den)
+Hermes run run_ab12 is running after 0.1s (last event: none)
+Hermes run run_ab12: tool ha_call_service started at 3.2s: light.turn_off den
+Hermes run run_ab12: tool ha_call_service finished in 0.4s at 3.6s: ...
+Hermes run run_ab12 is completed after 5.0s (last event: tool.completed)
+Hermes run run_ab12 answered within the fast window (5.0s)
+```
+
+What to look for when a request is slow or times out:
+
+- **`is waiting for a tool approval`** — Hermes paused the run until someone
+  approves a tool call. `/v1/runs` runs wait for an answer (or Hermes' approval
+  timeout), unlike the blocking chat completions call. The log line shows what
+  needs approving; adjust Hermes' approval settings for that tool.
+- **A tool that started but never finished**, or one with a long duration —
+  the slow part is inside Hermes or the service it calls.
+- **`gave up after …`** — the summary names the last status and event seen.
+- **`Polling Hermes run … failed`** — Home Assistant can't reach Hermes' status
+  endpoint.
+- **A run that stays `queued`** — Hermes hasn't started it; check the Hermes
+  gateway logs.
+
 ## Development
 
 ```bash

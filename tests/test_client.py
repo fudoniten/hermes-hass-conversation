@@ -83,3 +83,20 @@ async def test_chat_completion(
     client = HermesClient(async_get_clientsession(hass), URL, None)
 
     assert await client.chat_completion("m", [{"role": "user", "content": "x"}], 5) == "Hi"
+
+
+async def test_iter_run_events_parses_sse(
+    hass: HomeAssistant, aioclient_mock: AiohttpClientMocker
+) -> None:
+    body = (
+        b": keepalive\n\n"
+        b'id: 0\ndata: {"event": "tool.started", "tool": "ha_call_service"}\n\n'
+        b"data: not json\n\n"
+        b'id: 1\ndata: {"event": "run.completed"}\n\n'
+    )
+    aioclient_mock.get(f"{URL}/v1/runs/run_1/events", content=body)
+    client = HermesClient(async_get_clientsession(hass), URL, None)
+
+    events = [event async for event in client.iter_run_events("run_1", 30)]
+
+    assert [e["event"] for e in events] == ["tool.started", "run.completed"]

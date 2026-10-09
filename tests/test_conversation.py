@@ -45,6 +45,7 @@ class FakeHermes:
         self.gates: dict[str, asyncio.Event] = {}
         self.default_record: dict[str, Any] = {"status": "running"}
         self.sync_reply = "Sync reply."
+        self.events: dict[str, list[dict[str, Any]]] = {}
 
     async def start_run(self, model, text, instructions, history) -> str:
         if self.start_error is not None:
@@ -62,6 +63,10 @@ class FakeHermes:
 
     async def stop_run(self, run_id: str) -> None:
         self.stopped.append(run_id)
+
+    async def iter_run_events(self, run_id: str, timeout: float):
+        for event in self.events.get(run_id, []):
+            yield event
 
     async def chat_completion(self, model, messages, timeout) -> str:
         self.sync_calls.append(messages)
