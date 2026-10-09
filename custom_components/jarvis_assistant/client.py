@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+import json
 from typing import Any
 
 import aiohttp
@@ -90,6 +92,29 @@ class HermesClient:
         if not isinstance(data, dict):
             raise ValueError("unrecognized run status shape")
         return data
+
+    async def iter_run_events(
+        self, run_id: str, timeout: float
+    ) -> AsyncIterator[dict[str, Any]]:
+        """Yield the run's lifecycle events (tool started/completed, approvals...)
+        from its server-sent event stream.
+        """
+        async with self._session.get(
+            f"{self._base_url}{RUNS_PATH}/{run_id}/events",
+            headers={**self._headers, "Accept": "text/event-stream"},
+            timeout=aiohttp.ClientTimeout(total=timeout),
+        ) as resp:
+            resp.raise_for_status()
+            async for raw in resp.content:
+                line = raw.decode("utf-8", "replace").strip()
+                if not line.startswith("data:"):
+                    continue
+                try:
+                    event = json.loads(line[5:].strip())
+                except ValueError:
+                    continue
+                if isinstance(event, dict):
+                    yield event
 
     async def stop_run(self, run_id: str) -> None:
         """Ask Hermes to interrupt a run."""

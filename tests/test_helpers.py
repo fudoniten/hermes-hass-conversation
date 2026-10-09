@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from custom_components.hermes_assist.acks import select_ack
-from custom_components.hermes_assist.delivery import shorten_for_speech
+from custom_components.jarvis_assistant.acks import select_ack
+from custom_components.jarvis_assistant.delivery import shorten_for_speech
 
 
 def test_rich_ack_matches_first_pattern() -> None:

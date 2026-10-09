@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.hermes_assist.delivery import find_satellite
+from custom_components.jarvis_assistant.delivery import find_satellite
 
 
 async def test_find_satellite_by_entity_id(hass: HomeAssistant) -> None:

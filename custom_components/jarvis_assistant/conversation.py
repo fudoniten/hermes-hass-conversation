@@ -1,4 +1,4 @@
-"""Hermes Assist conversation agent."""
+"""Jarvis Assistant conversation agent."""
 
 from __future__ import annotations
 
@@ -62,8 +62,8 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Register the Hermes Assist conversation entity."""
-    async_add_entities([HermesAssistConversationEntity(entry)])
+    """Register the Jarvis Assistant conversation entity."""
+    async_add_entities([JarvisAssistantConversationEntity(entry)])
 
 
 @dataclass(frozen=True)
@@ -77,13 +77,13 @@ class _Request:
     device_id: str | None
 
 
-class HermesAssistConversationEntity(conversation.ConversationEntity):
+class JarvisAssistantConversationEntity(conversation.ConversationEntity):
     """Sends utterances to Hermes, acknowledging slow requests and
     delivering their results when they finish.
     """
 
     _attr_has_entity_name = True
-    _attr_name = "Hermes Assist"
+    _attr_name = "Jarvis Assistant"
 
     def __init__(self, entry: ConfigEntry) -> None:
         self._entry = entry
@@ -168,6 +168,8 @@ class HermesAssistConversationEntity(conversation.ConversationEntity):
         Returns the text to speak now, or None to fall back to the sync path.
         """
         client = self._client()
+        loop = asyncio.get_running_loop()
+        started = loop.time()
         try:
             run_id = await client.start_run(
                 self._option(CONF_MODEL, DEFAULT_MODEL),
@@ -189,7 +191,14 @@ class HermesAssistConversationEntity(conversation.ConversationEntity):
             _LOGGER.warning("Starting Hermes run failed (%s); trying sync", err)
             return None
 
-        _LOGGER.info("Hermes run %s started", run_id)
+        _LOGGER.info(
+            "Hermes run %s started in %.1fs for %r (%d history messages, device %s)",
+            run_id,
+            loop.time() - started,
+            request.text,
+            len(request.history),
+            request.device_key or "none",
+        )
         task = self._entry.async_create_background_task(
             self.hass,
             async_wait_for_run(
@@ -209,6 +218,11 @@ class HermesAssistConversationEntity(conversation.ConversationEntity):
             )
             raise
         if task in done:
+            _LOGGER.info(
+                "Hermes run %s answered within the fast window (%.1fs)",
+                run_id,
+                loop.time() - started,
+            )
             return self._finish(request, task.result(), run_id, user_recorded=False)
 
         # Too slow: acknowledge now and deliver the result when it arrives.
@@ -224,7 +238,12 @@ class HermesAssistConversationEntity(conversation.ConversationEntity):
             self._option(CONF_RICH_ACKS, DEFAULT_RICH_ACKS),
             self._option(CONF_ACK_TEXT, DEFAULT_ACK_TEXT),
         )
-        _LOGGER.info("Hermes run %s acknowledged: %s", run_id, ack)
+        _LOGGER.info(
+            "Hermes run %s still running after %.1fs; acknowledged with %r",
+            run_id,
+            loop.time() - started,
+            ack,
+        )
         return ack
 
     def _finish(
@@ -275,6 +294,7 @@ class HermesAssistConversationEntity(conversation.ConversationEntity):
         messages = [{"role": "system", "content": p} for p in system_prompts]
         messages.extend(history)
         messages.append({"role": "user", "content": text})
+        started = time.monotonic()
         try:
             reply = await self._client().chat_completion(
                 self._option(CONF_MODEL, DEFAULT_MODEL), messages, timeout
@@ -291,6 +311,9 @@ class HermesAssistConversationEntity(conversation.ConversationEntity):
         except (KeyError, ValueError, TypeError) as err:
             _LOGGER.error("Malformed response from Hermes: %s", err)
             return "Hermes returned a malformed response."
+        _LOGGER.info(
+            "Hermes chat completion answered in %.1fs", time.monotonic() - started
+        )
         history.append({"role": "user", "content": text})
         history.append({"role": "assistant", "content": reply})
         _trim_history(history)

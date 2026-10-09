@@ -1,5 +1,9 @@
 # Plan: Hermes Assist — async Home Assistant conversation agent for Hermes
 
+> **Renamed in v0.2.0:** the integration is now **Jarvis Assistant**
+> (domain `jarvis_assistant`). This plan keeps its original "Hermes Assist" /
+> `hermes_assist` wording.
+
 **Status:** v0.1.0 implemented (see `custom_components/hermes_assist/`). Revised
 from the original "Async Responses + Instant Acks for hass-hermes" spec after
 reviewing upstream v0.3.0.

@@ -1,6 +1,6 @@
 {
-  "domain": "hermes_assist",
-  "name": "Hermes Assist",
+  "domain": "jarvis_assistant",
+  "name": "Jarvis Assistant",
   "after_dependencies": ["assist_satellite", "notify"],
   "codeowners": ["@fudoniten"],
   "config_flow": true,
@@ -10,5 +10,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/fudoniten/hermes-hass-conversation/issues",
   "requirements": [],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }

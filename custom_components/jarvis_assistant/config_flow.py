@@ -1,4 +1,4 @@
-"""Config flow for the Hermes Assist integration."""
+"""Config flow for the Jarvis Assistant integration."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
 
 from .const import (
     CONF_ACK_TEXT,
@@ -41,6 +42,9 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# A multi-line text area that grows with the prompt.
+PROMPT_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
 
 # (option, default, validator) for everything beyond the connection settings.
 _ASYNC_OPTIONS: list[tuple[str, Any, Any]] = [
@@ -84,7 +88,7 @@ def _auth_headers(api_key: str | None) -> dict[str, str]:
     return headers
 
 
-class HermesAssistConfigFlow(ConfigFlow, domain=DOMAIN):
+class JarvisAssistantConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle the initial setup."""
 
     VERSION = 1
@@ -112,7 +116,7 @@ class HermesAssistConfigFlow(ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(url)
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=f"Hermes Assist ({url})",
+                    title=f"Jarvis Assistant ({url})",
                     data={CONF_URL: url},
                     options={
                         CONF_MODEL: user_input.get(CONF_MODEL, DEFAULT_MODEL),
@@ -133,7 +137,9 @@ class HermesAssistConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): vol.All(
                     vol.Coerce(int), vol.Range(min=5, max=600)
                 ),
-                vol.Optional(CONF_SYSTEM_PROMPT, default=DEFAULT_SYSTEM_PROMPT): str,
+                vol.Optional(
+                    CONF_SYSTEM_PROMPT, default=DEFAULT_SYSTEM_PROMPT
+                ): PROMPT_SELECTOR,
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
@@ -142,10 +148,10 @@ class HermesAssistConfigFlow(ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> OptionsFlow:
         """Return the options flow."""
-        return HermesAssistOptionsFlow()
+        return JarvisAssistantOptionsFlow()
 
 
-class HermesAssistOptionsFlow(OptionsFlow):
+class JarvisAssistantOptionsFlow(OptionsFlow):
     """Tweak connection, prompt and async behaviour after setup."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -166,7 +172,7 @@ class HermesAssistOptionsFlow(OptionsFlow):
             vol.Optional(
                 CONF_SYSTEM_PROMPT,
                 default=current.get(CONF_SYSTEM_PROMPT, DEFAULT_SYSTEM_PROMPT),
-            ): str,
+            ): PROMPT_SELECTOR,
         }
         for key, default, validator in _ASYNC_OPTIONS:
             fields[vol.Optional(key, default=current.get(key, default))] = validator
