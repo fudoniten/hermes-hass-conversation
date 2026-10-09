@@ -7,6 +7,7 @@ import pytest
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.helpers.selector import TextSelector
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClientMocker
@@ -15,6 +16,7 @@ from custom_components.hermes_assist.const import (
     CONF_API_KEY,
     CONF_FAST_WINDOW,
     CONF_MODEL,
+    CONF_SYSTEM_PROMPT,
     CONF_URL,
     CONF_USE_ASYNC,
     DEFAULT_FAST_WINDOW,
@@ -83,3 +85,19 @@ async def test_options_flow_keeps_existing_and_adds_new(hass: HomeAssistant) -> 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert entry.options[CONF_FAST_WINDOW] == 3
     assert entry.options[CONF_MODEL] == "custom"
+
+
+async def test_system_prompt_is_multiline(hass: HomeAssistant) -> None:
+    entry = MockConfigEntry(domain=DOMAIN, data={CONF_URL: URL}, options={})
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    validators = {key.schema: value for key, value in result["data_schema"].schema.items()}
+    assert isinstance(validators[CONF_SYSTEM_PROMPT], TextSelector)
+    assert validators[CONF_SYSTEM_PROMPT].config["multiline"] is True
+
+    prompt = "You are Hermes.\n\nRooms:\n- den\n- kitchenette"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_SYSTEM_PROMPT: prompt}
+    )
+    assert entry.options[CONF_SYSTEM_PROMPT] == prompt

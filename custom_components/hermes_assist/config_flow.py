@@ -11,6 +11,7 @@ import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import TextSelector, TextSelectorConfig
 
 from .const import (
     CONF_ACK_TEXT,
@@ -41,6 +42,9 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# A multi-line text area that grows with the prompt.
+PROMPT_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
 
 # (option, default, validator) for everything beyond the connection settings.
 _ASYNC_OPTIONS: list[tuple[str, Any, Any]] = [
@@ -133,7 +137,9 @@ class HermesAssistConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): vol.All(
                     vol.Coerce(int), vol.Range(min=5, max=600)
                 ),
-                vol.Optional(CONF_SYSTEM_PROMPT, default=DEFAULT_SYSTEM_PROMPT): str,
+                vol.Optional(
+                    CONF_SYSTEM_PROMPT, default=DEFAULT_SYSTEM_PROMPT
+                ): PROMPT_SELECTOR,
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
@@ -166,7 +172,7 @@ class HermesAssistOptionsFlow(OptionsFlow):
             vol.Optional(
                 CONF_SYSTEM_PROMPT,
                 default=current.get(CONF_SYSTEM_PROMPT, DEFAULT_SYSTEM_PROMPT),
-            ): str,
+            ): PROMPT_SELECTOR,
         }
         for key, default, validator in _ASYNC_OPTIONS:
             fields[vol.Optional(key, default=current.get(key, default))] = validator
