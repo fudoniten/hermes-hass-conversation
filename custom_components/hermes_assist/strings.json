@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Hermes",
+        "description": "Point this at the Hermes Agent API server on your network.",
+        "data": {
+          "url": "Hermes URL",
+          "api_key": "API key (optional)",
+          "model": "Model name",
+          "timeout": "Sync timeout (seconds)",
+          "system_prompt": "System prompt"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach Hermes at that URL.",
+      "invalid_auth": "Hermes requires an API key, or the key was rejected."
+    },
+    "abort": {
+      "already_configured": "This Hermes server is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Hermes Assist options",
+        "data": {
+          "model": "Model name",
+          "timeout": "Sync timeout (seconds)",
+          "api_key": "API key (optional)",
+          "system_prompt": "System prompt",
+          "use_async": "Use async runs",
+          "fast_window": "Fast window (seconds)",
+          "max_wait": "Maximum wait for slow requests (seconds)",
+          "rich_acks": "Request-specific acknowledgments",
+          "ack_text": "Default acknowledgment",
+          "notify_target": "Notify service for results (optional)",
+          "device_context_ttl": "Keep follow-up context per device (seconds)"
+        },
+        "data_description": {
+          "timeout": "Only used when async runs are off or unavailable.",
+          "use_async": "Answer quickly or acknowledge, then deliver slow results later. Falls back to the sync path if Hermes has no /v1/runs endpoint.",
+          "fast_window": "How long to wait for a real answer before acknowledging. 0 always acknowledges.",
+          "max_wait": "Slow requests still running after this are stopped.",
+          "notify_target": "For example mobile_app_pixel_11_pro. Leave empty to skip.",
+          "device_context_ttl": "A new conversation on the same device within this time continues the previous one. 0 turns this off."
+        }
+      }
+    }
+  }
+}

@@ -1,7 +1,8 @@
 # Plan: Hermes Assist — async Home Assistant conversation agent for Hermes
 
-**Status:** draft, revised from the original "Async Responses + Instant Acks for
-hass-hermes" spec after reviewing upstream v0.3.0.
+**Status:** v0.1.0 implemented (see `custom_components/hermes_assist/`). Revised
+from the original "Async Responses + Instant Acks for hass-hermes" spec after
+reviewing upstream v0.3.0.
 
 **Goal:** Voice and chat requests through Home Assistant's Assist pipeline get a
 real answer quickly when Hermes is fast, a short spoken acknowledgment when it is
@@ -45,9 +46,21 @@ There is **no `tests/` directory** upstream; tests are written from scratch here
 - `POST /v1/runs/{run_id}/stop` → cancel
 - Auth: `Authorization: Bearer <api_key>` (same key as chat/completions)
 
-**Open question, must be resolved first (see §9):** the exact request body
-`/v1/runs` accepts — `input` string (confirmed working), a full `messages`
-array, and/or an `X-Hermes-Session-Id` header for session continuity.
+**Request body (resolved from Hermes' `gateway/platforms/api_server_runs.py`):**
+
+- `input` — the new user message as a string, or a message list whose last
+  entry is the user message and earlier entries become history.
+- `instructions` — an ephemeral system prompt for this run.
+- `conversation_history` — explicit prior `{role, content}` turns; takes
+  precedence over everything else.
+- `session_id` (body) or `X-Hermes-Session-Key` (header) — make Hermes load
+  and persist history for a session on its side.
+- Terminal statuses: `completed`, `failed`, `cancelled`, `interrupted`.
+  Non-terminal: `queued`, `running`, `waiting_for_approval`, `stopping`.
+
+v0.1.0 sends `input` (string) + `instructions` + `conversation_history` from the
+integration's own history, so context handling is deterministic and identical to
+the sync path. Hermes-side sessions are left for later (§4.3).
 
 ---
 
@@ -103,10 +116,10 @@ This is the main gap in the original spec.
    else `user_input.device_id`) with a TTL (`device_context_ttl`, default 600 s).
    When a request arrives with an unknown `conversation_id` but a known, unexpired
    device key, continue that device's history.
-3. **Hermes session ID (preferred if supported).** If `/v1/runs` accepts
-   `X-Hermes-Session-Id` (or equivalent), send a stable ID derived from the device
-   key (or the `conversation_id` when there's no device). Hermes then keeps its own
-   context, and the local history becomes a fallback/supplement.
+3. **Hermes session ID (future).** Hermes accepts `session_id` /
+   `X-Hermes-Session-Key`, which would let it keep per-device context (and its
+   long-term memory) itself. Not used in v0.1.0: the local history plus
+   `conversation_history` already covers follow-ups.
 4. **Voice brevity.** When the request came from a satellite, add a system-prompt
    line telling Hermes the answer will be spoken and must be one or two sentences.
 
@@ -217,10 +230,7 @@ hacs.json
 
 ## 9. Implementation order
 
-1. **Verify `/v1/runs` request schema** against the real Hermes: `input` string
-   vs. `messages` array vs. session header. Record the result in the README.
-   If it can't be verified up front, the client sends `messages` when accepted and
-   falls back to a flattened `input` string, behind one function.
+1. ~~Verify `/v1/runs` request schema~~ — resolved from Hermes' source (§1).
 2. Seed from upstream: copy files, rename domain, keep MIT attribution, add
    `hacs.json`, CI.
 3. `client.py` + `runner.py` with unit tests (fake Hermes via `aioclient_mock`).
@@ -246,7 +256,8 @@ Automated (pytest):
 8. Two concurrent requests from two devices → independent acks and deliveries.
 9. Follow-up with new `conversation_id` from same device within TTL → previous history included.
 10. Unload with an in-flight run → task cancelled, `/stop` called.
-11. `use_async` off → identical to upstream v0.3.0 behaviour.
+11. `use_async` off → upstream v0.3.0 request flow (chat completions). The one
+    difference: the voice-brevity prompt (§4.4) is added on both paths.
 
 Manual (on the Kitchenette PE, "Hey Jarvis"):
 

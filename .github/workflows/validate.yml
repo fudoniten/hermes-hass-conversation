@@ -1,0 +1,45 @@
+name: Validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+          # Brand assets only matter for the default HACS list.
+          ignore: brands
+
+  hassfest:
+    name: Hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hassfest validation
+        uses: home-assistant/actions/hassfest@master
+
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install test dependencies
+        run: |
+          pip install -r requirements_test.txt
+          # The tests load HA's conversation component; install its pinned requirements.
+          pip install $(python -c "import importlib.util, json, pathlib; ha = pathlib.Path(importlib.util.find_spec('homeassistant').origin).parent; print(' '.join(json.loads((ha / 'components/conversation/manifest.json').read_text())['requirements']))")
+      - name: Run tests
+        run: pytest -q
