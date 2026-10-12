@@ -111,7 +111,8 @@ async def _async_poll(
             )
         else:
             poll_errors = 0
-            _LOGGER.debug("Hermes run %s record: %s", run_id, _truncate(repr(record)))
+            if record != last:
+                _LOGGER.debug("Hermes run %s record: %r", run_id, record)
             status = record.get("status")
             if status != last.get("status"):
                 _LOGGER.info(
@@ -154,10 +155,15 @@ async def _async_log_events(
     decides the outcome, so stream errors are only logged.
     """
     loop = asyncio.get_running_loop()
+    deltas = _DeltaLog(run_id)
     try:
         async for event in client.iter_run_events(run_id, max_wait + 30):
             name = event.get("event")
             elapsed = loop.time() - started
+            if deltas.add(event, elapsed):
+                continue
+            deltas.flush()
+            _LOGGER.debug("Hermes run %s event at %.1fs: %r", run_id, elapsed, event)
             if name == "tool.started":
                 _LOGGER.info(
                     "Hermes run %s: tool %s started at %.1fs: %s",
@@ -184,17 +190,54 @@ async def _async_log_events(
                     elapsed,
                     _truncate(str(event.get("goal") or event.get("summary") or "")),
                 )
-            else:
-                _LOGGER.debug(
-                    "Hermes run %s event at %.1fs: %s",
-                    run_id,
-                    elapsed,
-                    _truncate(repr(event)),
-                )
     except asyncio.CancelledError:
         raise
     except (aiohttp.ClientError, TimeoutError, ValueError) as err:
         _LOGGER.debug("Event stream for Hermes run %s ended: %r", run_id, err)
+    finally:
+        deltas.flush()
+
+
+class _DeltaLog:
+    """Joins a run of streamed text deltas (reply or reasoning tokens) into one
+    debug line instead of one line per token.
+    """
+
+    def __init__(self, run_id: str) -> None:
+        self._run_id = run_id
+        self._name: str | None = None
+        self._started = 0.0
+        self._parts: list[str] = []
+
+    def add(self, event: dict[str, Any], elapsed: float) -> bool:
+        """Buffer the event if it is a text delta; return whether it was."""
+        name = event.get("event")
+        if not isinstance(name, str) or not name.endswith(".delta"):
+            return False
+        text = next(
+            (event[k] for k in ("delta", "text", "content") if isinstance(event.get(k), str)),
+            None,
+        )
+        if text is None:
+            return False
+        if name != self._name:
+            self.flush()
+            self._name = name
+            self._started = elapsed
+        self._parts.append(text)
+        return True
+
+    def flush(self) -> None:
+        if self._name is not None:
+            _LOGGER.debug(
+                "Hermes run %s %s from %.1fs: %r",
+                self._run_id,
+                self._name,
+                self._started,
+                "".join(self._parts),
+            )
+        self._name = None
+        self._parts = []
 
 
 async def async_stop_run(client: HermesClient, run_id: str) -> None:

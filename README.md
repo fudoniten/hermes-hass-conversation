@@ -114,7 +114,7 @@ Turn on Jarvis Assistant's logs in `configuration.yaml` and restart:
 logger:
   default: warning
   logs:
-    custom_components.jarvis_assistant: info   # use debug for raw run records and events
+    custom_components.jarvis_assistant: info   # use debug for the full trace (see Debug mode)
 ```
 
 Each request then logs its whole life, for example:
@@ -127,6 +127,28 @@ Hermes run run_ab12: tool ha_call_service finished in 0.4s at 3.6s: ...
 Hermes run run_ab12 is completed after 5.0s (last event: tool.completed)
 Hermes run run_ab12 answered within the fast window (5.0s)
 ```
+
+### Debug mode
+
+For a full trace of every request, go to **Settings → Devices & services →
+Jarvis Assistant → ⋮ → Enable debug logging**. No restart is needed. While it
+is on, the log also records, untruncated:
+
+- the incoming request: its text, conversation, device and language
+- the system prompt and history sent to Hermes, tagged with the run ID (or the
+  full message list on the chat completions path)
+- every event from the run's event stream, with streamed reply and reasoning
+  tokens joined into one line each (what Hermes streams depends on your Hermes
+  version)
+- each change in the run's status record, including approval details
+- whether the run was handed to the background, for how long, and where its
+  result will be delivered
+- the reply sent back to Assist, the full Hermes result, and the text spoken,
+  sent to the notify service or posted as a persistent notification
+
+Choose **Disable debug logging** to turn it off; Home Assistant then downloads
+the log captured while it was on. Debug logs contain everything you said and
+everything Hermes answered, so check them before sharing.
 
 What to look for when a request is slow or times out:
 

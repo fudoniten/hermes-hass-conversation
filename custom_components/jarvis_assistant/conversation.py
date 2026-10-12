@@ -139,6 +139,14 @@ class JarvisAssistantConversationEntity(conversation.ConversationEntity):
             system_prompts.append(user_input.extra_system_prompt)
         if device_key:
             system_prompts.append(VOICE_SYSTEM_PROMPT)
+        _LOGGER.debug(
+            "Request for conversation %s (device %s, language %s, %d history messages): %r",
+            conversation_id,
+            device_key or "none",
+            user_input.language,
+            len(history),
+            user_input.text,
+        )
 
         reply: str | None = None
         if self._option(CONF_USE_ASYNC, DEFAULT_USE_ASYNC) and not self._runs_unsupported:
@@ -153,6 +161,7 @@ class JarvisAssistantConversationEntity(conversation.ConversationEntity):
         if reply is None:
             reply = await self._async_process_sync(user_input.text, history, system_prompts)
 
+        _LOGGER.debug("Replying to conversation %s: %r", conversation_id, reply)
         response = intent.IntentResponse(language=user_input.language)
         response.async_set_speech(reply)
         return conversation.ConversationResult(
@@ -170,11 +179,12 @@ class JarvisAssistantConversationEntity(conversation.ConversationEntity):
         client = self._client()
         loop = asyncio.get_running_loop()
         started = loop.time()
+        instructions = "\n\n".join(system_prompts)
         try:
             run_id = await client.start_run(
                 self._option(CONF_MODEL, DEFAULT_MODEL),
                 request.text,
-                "\n\n".join(system_prompts),
+                instructions,
                 list(request.history),
             )
         except RunsUnsupportedError as err:
@@ -198,6 +208,12 @@ class JarvisAssistantConversationEntity(conversation.ConversationEntity):
             request.text,
             len(request.history),
             request.device_key or "none",
+        )
+        _LOGGER.debug(
+            "Hermes run %s instructions:\n%s\nHistory: %r",
+            run_id,
+            instructions,
+            request.history,
         )
         task = self._entry.async_create_background_task(
             self.hass,
@@ -244,6 +260,15 @@ class JarvisAssistantConversationEntity(conversation.ConversationEntity):
             loop.time() - started,
             ack,
         )
+        _LOGGER.debug(
+            "Hermes run %s continues in the background for up to %ss; result goes to "
+            "satellite %s, device %s, notify %s",
+            run_id,
+            self._option(CONF_MAX_WAIT, DEFAULT_MAX_WAIT),
+            request.satellite_id or "none",
+            request.device_id or "none",
+            self._option(CONF_NOTIFY_TARGET, DEFAULT_NOTIFY_TARGET) or "none",
+        )
         return ack
 
     def _finish(
@@ -256,6 +281,7 @@ class JarvisAssistantConversationEntity(conversation.ConversationEntity):
         """
         if outcome.status == "completed":
             reply = outcome.output.strip() or "(empty response)"
+            _LOGGER.debug("Hermes run %s reply: %r", run_id, reply)
             if not user_recorded:
                 request.history.append({"role": "user", "content": request.text})
             request.history.append({"role": "assistant", "content": reply})
@@ -294,6 +320,7 @@ class JarvisAssistantConversationEntity(conversation.ConversationEntity):
         messages = [{"role": "system", "content": p} for p in system_prompts]
         messages.extend(history)
         messages.append({"role": "user", "content": text})
+        _LOGGER.debug("Hermes chat completion messages: %r", messages)
         started = time.monotonic()
         try:
             reply = await self._client().chat_completion(
@@ -314,6 +341,7 @@ class JarvisAssistantConversationEntity(conversation.ConversationEntity):
         _LOGGER.info(
             "Hermes chat completion answered in %.1fs", time.monotonic() - started
         )
+        _LOGGER.debug("Hermes chat completion reply: %r", reply)
         history.append({"role": "user", "content": text})
         history.append({"role": "assistant", "content": reply})
         _trim_history(history)
