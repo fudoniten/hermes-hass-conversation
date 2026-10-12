@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import Any
 from unittest.mock import patch
 
@@ -374,3 +375,40 @@ async def test_no_satellite_or_notify_creates_persistent_notification(
 
     persistent.assert_called_once()
     assert persistent.call_args.args[1] == "Busy day."
+
+
+async def test_debug_logs_whole_background_request(
+    hass: HomeAssistant,
+    hermes: FakeHermes,
+    announce,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="custom_components.jarvis_assistant")
+    await _setup(hass, **{CONF_FAST_WINDOW: 0})
+    hermes.hold("run_1")
+
+    await _ask(hass, "play some Mozart in the media room")
+    hermes.finish("run_1", "Mozart is playing in the media room.")
+    await hass.async_block_till_done(wait_background_tasks=True)
+
+    log = caplog.text
+    assert "'play some Mozart in the media room'" in log
+    assert "run_1 instructions:\nYou are Jarvis" in log
+    assert "spoken aloud" in log
+    assert f"run_1 continues in the background for up to 240s; result goes to satellite {SATELLITE}" in log
+    assert "Replying to conversation" in log and "'Okay, getting that playing.'" in log
+    assert "run_1 reply: 'Mozart is playing in the media room.'" in log
+    assert f"Spoke on {SATELLITE}: 'Mozart is playing in the media room.'" in log
+
+
+async def test_debug_logs_sync_request(
+    hass: HomeAssistant, hermes: FakeHermes, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="custom_components.jarvis_assistant")
+    await _setup(hass, **{CONF_USE_ASYNC: False})
+
+    await _ask(hass, "hello")
+
+    log = caplog.text
+    assert "chat completion messages:" in log and "'content': 'hello'" in log
+    assert "chat completion reply: 'Sync reply.'" in log

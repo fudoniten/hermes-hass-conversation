@@ -135,3 +135,28 @@ async def test_poll_errors_are_logged(caplog: pytest.LogCaptureFixture) -> None:
 
     assert outcome.status == "completed"
     assert "Polling Hermes run run_1 failed (1 in a row)" in caplog.text
+
+
+async def test_debug_logs_full_events_and_joins_deltas(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    caplog.set_level(logging.DEBUG, logger="custom_components.jarvis_assistant")
+    long_preview = "x" * 500
+    client = ScriptedHermes(
+        [{"status": "running"}, {"status": "running"}, {"status": "completed", "output": "Done."}],
+        events=[
+            {"event": "reasoning.delta", "delta": "The user wants "},
+            {"event": "reasoning.delta", "delta": "the lights off."},
+            {"event": "tool.started", "tool": "ha_call_service", "preview": long_preview},
+            {"event": "message.delta", "delta": "Do"},
+            {"event": "message.delta", "delta": "ne."},
+        ],
+    )
+
+    await async_wait_for_run(client, "run_1", 30)
+
+    log = caplog.text
+    assert "run_1 reasoning.delta from" in log and "'The user wants the lights off.'" in log
+    assert "run_1 message.delta from" in log and "'Done.'" in log
+    assert long_preview in log  # untruncated at debug level
+    assert log.count("'status': 'running'") == 1  # unchanged records are not repeated

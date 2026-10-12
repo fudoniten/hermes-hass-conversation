@@ -44,6 +44,7 @@ async def async_deliver(
 
     if failed or not (spoken or notified):
         persistent_notification.async_create(hass, text, title=NOTIFICATION_TITLE)
+        _LOGGER.debug("Posted persistent notification: %r", text)
 
 
 def find_satellite(
@@ -77,6 +78,7 @@ async def _async_speak(hass: HomeAssistant, satellite: str, text: str) -> bool:
         _LOGGER.warning("Could not %s on %s: %s", service, satellite, err)
         return False
     _LOGGER.info("Delivered Hermes result to %s via %s", satellite, service)
+    _LOGGER.debug("Spoke on %s: %r", satellite, text)
     return True
 
 
@@ -94,6 +96,7 @@ async def _async_notify(hass: HomeAssistant, target: str, text: str) -> bool:
         _LOGGER.warning("Could not notify %s: %s", service, err)
         return False
     _LOGGER.info("Delivered Hermes result via notify.%s", service)
+    _LOGGER.debug("Notified %s: %r", service, text)
     return True
 
 
